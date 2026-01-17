@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconnaissance Faciale - Ma Classe</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(88, 86, 214, 0.3) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            font-weight: 400;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        h2 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.stop {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn.stop:hover {
+            box-shadow: 0 6px 30px rgba(245, 87, 108, 0.6);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+            height: 120px;
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 16px;
+            background: rgba(102, 126, 234, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-input-wrapper:hover {
+            border-color: rgba(102, 126, 234, 0.8);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .file-input-wrapper::before {
+            content: '📁';
+            font-size: 32px;
+        }
+
+        .file-input-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .info {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            padding: 16px;
+            margin-top: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            line-height: 1.6;
+            border-radius: 8px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            margin-top: 24px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 24px;
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+        }
+
+        .alert {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            border-left: 4px solid #ffc107;
+            color: #ffc107;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 14px;
+            font-size: 12px;
+            margin: 4px 4px 0 0;
+            font-weight: 500;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        #trained-list {
+            margin-top: 16px;
+        }
+
+        #trained-names {
+            margin-top: 12px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+            
+            .card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Reconnaissance Faciale</h1>
+            <p class="subtitle">Technologie de détection et identification en temps réel</p>
+        </div>
+
+        <div id="error" style="display:none;" class="alert"></div>
+        
+        <div id="loading" class="card loading">
+            <div class="spinner"></div>
+            <p>Chargement des modèles d'intelligence artificielle...</p>
+        </div>
+
+        <div id="app" style="display:none;">
+            <div class="card">
+                <h2>Ajouter des références</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="imageUpload" multiple accept="image/*">
+                    <span class="file-input-label">Cliquez pour sélectionner des photos</span>
+                </div>
+                <div class="info">
+                    Nommez vos fichiers avec les prénoms (Pierre.jpg, Marie.jpg). Utilisez des photos de face bien éclairées pour de meilleurs résultats.
+                </div>
+                <div id="trained-list" class="info" style="display:none;">
+                    <strong>Visages enregistrés :</strong>
+                    <div id="trained-names"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Démarrer la détection</h2>
+                <button id="startBtn" class="btn">Activer la caméra</button>
+                <div id="videoSection" style="display:none;">
+                    <div class="video-container">
+                        <video id="video" autoplay playsinline muted></video>
+                        <canvas id="canvas"></canvas>
+                    </div>
+                    <div class="status" id="status">En attente de détection...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+        let trainedFaces = [];
+        let isDetecting = false;
+
+        // Chargement des modèles
+        async function loadModels() {
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+            } catch (err) {
+                showError('Erreur de chargement des modèles IA : ' + err.message);
+            }
+        }
+
+        // Afficher une erreur
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Upload des images d'entraînement - MEILLEURE EXTRACTION
+        document.getElementById('imageUpload').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            let count = 0;
+            const statusDiv = document.getElementById('status');
+
+            for (const file of files) {
+                try {
+                    statusDiv.textContent = `Analyse de ${file.name}...`;
+                    const img = await loadImage(file);
+                    
+                    // Utiliser des options plus permissives pour détecter les visages
+                    const detection = await faceapi
+                        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({
+                            inputSize: 416,
+                            scoreThreshold: 0.3
+                        }))
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if (detection) {
+                        const name = file.name.replace(/\.[^/.]+$/, "");
+                        
+                        // Vérifier si ce nom existe déjà
+                        const existingIndex = trainedFaces.findIndex(f => f.name === name);
+                        if (existingIndex >= 0) {
+                            // Remplacer l'ancienne photo par la nouvelle
+                            trainedFaces[existingIndex].descriptor = detection.descriptor;
+                            console.log(`Mise à jour de ${name}`);
+                        } else {
+                            trainedFaces.push({
+                                name: name,
+                                descriptor: detection.descriptor
+                            });
+                        }
+                        count++;
+                        console.log(`✓ ${name} enregistré avec succès`);
+                    } else {
+                        console.warn(`✗ Aucun visage détecté dans ${file.name}`);
+                    }
+                } catch (err) {
+                    console.error('Erreur pour', file.name, err);
+                }
+            }
+
+            if (count > 0) {
+                updateTrainedList();
+                alert(`✅ ${count} visage(s) ajouté(s) avec succès !\n\nOuvrez la console (F12) pour voir les détails de reconnaissance.`);
+            } else {
+                alert('❌ Aucun visage détecté dans les images.\n\nAssurez-vous que :\n- Les photos sont bien éclairées\n- Les visages sont de face\n- Les visages sont clairement visibles');
+            }
+            statusDiv.textContent = 'En attente...';
+        });
+
+        // Charger une image
+        function loadImage(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                    img.onload = () => resolve(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Mettre à jour la liste des visages entraînés
+        function updateTrainedList() {
+            const list = document.getElementById('trained-list');
+            const names = document.getElementById('trained-names');
+            
+            if (trainedFaces.length > 0) {
+                list.style.display = 'block';
+                names.innerHTML = trainedFaces.map(f => 
+                    `<span class="badge">${f.name}</span>`
+                ).join('');
+            }
+        }
+
+        // Démarrer/arrêter la caméra
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            const video = document.getElementById('video');
+            const btn = document.getElementById('startBtn');
+            const videoSection = document.getElementById('videoSection');
+
+            if (!isDetecting) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            facingMode: 'user',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    });
+                    
+                    video.srcObject = stream;
+                    videoSection.style.display = 'block';
+                    btn.textContent = 'Arrêter';
+                    btn.classList.add('stop');
+                    isDetecting = true;
+
+                    video.addEventListener('play', () => {
+                        const canvas = document.getElementById('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        detectFaces();
+                    });
+                } catch (err) {
+                    alert('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+                }
+            } else {
+                const stream = video.srcObject;
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                video.srcObject = null;
+                videoSection.style.display = 'none';
+                btn.textContent = 'Activer la caméra';
+                btn.classList.remove('stop');
+                isDetecting = false;
+            }
+        });
+
+        // Détection en continu
+        async function detectFaces() {
+            if (!isDetecting) return;
+
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const status = document.getElementById('status');
+
+            if (video.readyState === 4) {
+                const detections = await faceapi
+                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({
+                        inputSize: 416,
+                        scoreThreshold: 0.3
+                    }))
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+
+                const displaySize = { width: video.videoWidth, height: video.videoHeight };
+                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                resizedDetections.forEach((detection) => {
+                    const box = detection.detection.box;
+                    let name = 'Inconnu';
+
+                    // Comparer avec les visages entraînés - SEUIL ÉQUILIBRÉ
+                    if (trainedFaces.length > 0) {
+                        let bestDistance = 1;
+                        let bestName = 'Inconnu';
+                        let allDistances = [];
+
+                        trainedFaces.forEach(trained => {
+                            const distance = faceapi.euclideanDistance(
+                                detection.descriptor, 
+                                trained.descriptor
+                            );
+                            
+                            allDistances.push({ name: trained.name, distance: distance });
+                            
+                            if (distance < bestDistance) {
+                                bestDistance = distance;
+                                bestName = trained.name;
+                            }
+                        });
+
+                        // Seuil équilibré : 0.55 (ni trop strict, ni trop permissif)
+                        // Distances typiques : < 0.4 = excellent match, 0.4-0.55 = bon match, > 0.6 = pas la même personne
+                        if (bestDistance < 0.55) {
+                            name = `${bestName} (${(bestDistance * 100).toFixed(0)}%)`;
+                            console.log(`✅ Match: ${bestName} - Distance: ${bestDistance.toFixed(3)}`);
+                        } else {
+                            name = 'Inconnu';
+                            console.log(`❌ Pas de match - Meilleure distance: ${bestDistance.toFixed(3)} pour ${bestName}`);
+                        }
+                        
+                        // Afficher tous les scores pour debug
+                        console.log('Toutes les distances:', allDistances.map(d => `${d.name}: ${d.distance.toFixed(3)}`).join(', '));
+                    }
+
+                    // Dessiner le carré vert pour les reconnus, rouge pour les inconnus
+                    ctx.strokeStyle = name === 'Inconnu' ? '#ff0000' : '#00ff00';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+                    // Dessiner le nom en dessous avec fond semi-transparent
+                    ctx.fillStyle = name === 'Inconnu' ? '#ff0000' : '#00ff00';
+                    ctx.font = 'bold 22px Arial';
+                    
+                    // Fond du texte
+                    const textWidth = ctx.measureText(name).width;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(box.x - 2, box.y + box.height + 5, textWidth + 10, 35);
+                    
+                    // Texte
+                    ctx.fillStyle = name === 'Inconnu' ? '#ff3333' : '#00ff00';
+                    ctx.fillText(name, box.x + 3, box.y + box.height + 30);
+                });
+
+                status.textContent = `${detections.length} visage(s) détecté(s)`;
+            }
+
+            requestAnimationFrame(detectFaces);
+        }
+
+        // Initialisation
+        loadModels();
+    </script>
+</body>
+</html>
